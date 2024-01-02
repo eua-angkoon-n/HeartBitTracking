@@ -60,6 +60,11 @@ date_default_timezone_set(Setting::$AppTimeZone);
 
             <!-- Main content -->
             <!-- Main content -->
+            <?php 
+            include(__DIR__ . "/app/Frame/modal-detail.php");
+            include(__DIR__ . "/app/Frame/modal-image.php");
+             ?>
+
             <div class="content">
                 <div class="container">
                     <div class="row d-flex justify-content-center">
@@ -74,7 +79,7 @@ date_default_timezone_set(Setting::$AppTimeZone);
                                     <div class="carousel-item active">
                                     <a href="https://www.facebook.com/HeartBitCosShop" target="_blank">
                                         <img class="d-block w-100" 
-                                            src="dist/img/Banner1.jpg" alt="First slide">
+                                            src="dist/img/newbanner.jpg" alt="First slide">
                                     </a>
                                     </div>
                                 </div>
@@ -122,20 +127,12 @@ date_default_timezone_set(Setting::$AppTimeZone);
                                         <div class="col-sm-12 p-0 ">
 
                                             <table id="track_table"
-                                                class="table table-hover dataTable nowrap">
+                                                class="table table-hover dataTable nowrap table-bordered">
                                                 <thead>
                                                     <tr class="text-center">
-                                                        <th>เลขที่ออเดอร์</th>
-                                                        <th scope="col" >Facebook</th>
-                                                        <th scope="col" >สินค้าที่สั่ง</th>
-                                                        <th scope="col" >ตัวเลือกสินค้า</th>
-                                                        <th scope="col" >จำนวนสินค้า</th>
-                                                        <th scope="col" >สถานะสินค้า</th>
-                                                        <th scope="col" >ยอดค้าง</th>
-                                                        <th scope="col" >เดดไลน์จ่ายยอดค้าง</th>
-                                                        <th scope="col" >เข้าบ้านแอดมิน</th>
-                                                        <th scope="col" >จัดส่งสินค้า</th>
-                                                        <th scope="col" >หมายเหตุ</th>
+                                                        <th scope="col" style="width:1%"></th>
+                                                        <th scope="col" style="width:2%">เลขที่ออเดอร์</th>
+                                                        <th scope="col" style="width:10%" >Facebook</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -150,6 +147,8 @@ date_default_timezone_set(Setting::$AppTimeZone);
                         </div>
                         <!-- /.card -->
                     </div>
+
+                   
 
                     </div>
                     <!-- /.row -->
@@ -189,6 +188,41 @@ date_default_timezone_set(Setting::$AppTimeZone);
             $('#track_table').DataTable().ajax.reload();
 
         });
+
+        $(document).off("click", ".modal-detail").on("click", ".modal-detail", function (e) {
+            var order_no = $(this).data('order');
+            var facebook = $(this).data('facebook');
+
+            getModal(order_no, facebook);
+        });
+
+        $(document).off("click", ".modal-img").on("click", ".modal-img", function (e) {
+            var img = $(this).data('id');
+            $('#modalImg').attr('src', img);
+        });
+
+        function getModal(order_no, facebook) {
+
+            $.ajax({
+                url: "app/Functions/f-ajax.php",
+                type: "POST",
+                data: {
+                    'action': 'modal',
+                    'order': order_no,
+                    'facebook': facebook
+                },
+                beforeSend: function () {},
+                success: function (data) {
+                    console.log(data);
+                    // return false;
+                    $('#TheTimeline').html(data);
+                    $('#order_no').text(order_no);
+                    $('#facebook').text(facebook);
+
+                  
+                }
+            });
+        }
            
     });
 </script>

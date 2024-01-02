@@ -83,7 +83,7 @@ font-size: 24px;
 /* สไตล์ปกติสำหรับหน้าจอขนาดใหญ่ */
 .carousel-item img {
     width: 100%;
-    height: 500px;
+    height: 400px;
     object-fit: cover;
 }
 

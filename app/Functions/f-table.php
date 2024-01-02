@@ -35,6 +35,7 @@ Class DataTable extends TableProcessing {
             $con = connect_database();
             $obj = new CRUD($con);
 
+            $SET      = $obj->fetchRows(Setting::$SQLSET);
             $fetchRow = $obj->fetchRows($sql);
             $numRow   = $obj->getCount($sqlCount);
             // return $fetchRow;
@@ -69,6 +70,7 @@ Class DataTable extends TableProcessing {
         $sql .= "$name ";
 
         $sql .= "$this->query_search ";
+        $sql .= "GROUP BY item_order, facebook ";
         if($OrderBY) {
             $sql .= "ORDER BY ";
             $sql .= "$this->orderBY ";
@@ -102,21 +104,15 @@ Class DataTable extends TableProcessing {
         if (count($fetchRow) > 0) {
             $No = ($numRow - $this->pStart);
             foreach ($fetchRow as $key => $value) {
+
+                $Control = $this->getControl($fetchRow[$key]['item_order'], $fetchRow[$key]['facebook']);
               
 
                 $dataRow = array();
+                $dataRow[] = $Control;
                 $dataRow[] = "<h6 class='text-center'>".$fetchRow[$key]['item_order']."</h6>";
                 $dataRow[] = $fetchRow[$key]['facebook'];
-                $dataRow[] = $fetchRow[$key]['item_name'];
-                $dataRow[] = $fetchRow[$key]['item_option'];
-                $dataRow[] = $fetchRow[$key]['item_amount'];
-                $dataRow[] = "<h4 class='text-center'><span class='badge' style='background-color:".Setting::$statusTrack[$fetchRow[$key]['item_status']].";color:white'>".$fetchRow[$key]['item_status']."</span></h4>";
-                $dataRow[] = $fetchRow[$key]['balance'];
-                $dataRow[] = $fetchRow[$key]['deadline_date'];
-                $dataRow[] = $fetchRow[$key]['receive_date'];
-                $dataRow[] = $fetchRow[$key]['delivery_date'];
-                $dataRow[] = $fetchRow[$key]['remark'];
-        
+      
                 $arrData[] = $dataRow;
                 $No--;
                 
@@ -133,9 +129,9 @@ Class DataTable extends TableProcessing {
         return $output;
     }
 
-    public function getControl($id, $date, $vehicle){
-        $result = "<div class='text-center'><button type='button' style='background-color:#F15C22;color:#EEEEEE' class='btn text-center modalMile' data-id='$id' data-datetext='$date' data-vehicle='$vehicle' data-toggle='modal' data-target='#modal-mile' data-backdrop='static' data-keyboard='false' id='modalMile' title='บันทึกเลขไมล์'>";
-        $result .= "<i class='fa fa-save'></i><span> บันทึกเลขไมล์</span> ";
+    public function getControl($item_order, $facebook){
+        $result = "<div class='text-center'><button type='button' class='btn btn-xs btn-info text-center modal-detail' data-order='$item_order' data-facebook='$facebook' data-toggle='modal' data-target='#modal-detail' id='modal-detail' title='รายละเอียด'>";
+        $result .= "<i class='fa fa-plus'></i>";
         $result .= "</button></div>";
         return $result;
     }
@@ -160,17 +156,10 @@ switch($action){
     default:
         $DataTableCol = array( 
             0 => "tb_lot.id_lot",
-            1 => "tb_lot.item_order",
-            2 => "tb_lot.facebook",
-            3 => "tb_lot.item_name",
-            4 => "tb_lot.item_option",
-            5 => "tb_lot.item_amount",
-            6 => "tb_lot.item_status",
-            7 => "tb_lot.balance",
-            8 => "tb_lot.deadline_date",
-            9 => "tb_lot.receive_date",
-            10 => "tb_lot.delivery_date",
-            11 => "tb_lot.remark",
+            1 => "tb_lot.id_lot",
+            2 => "tb_lot.item_order",
+            3 => "tb_lot.facebook",
+            4 => "tb_lot.item_status",
         );
     break;
 }
@@ -200,3 +189,4 @@ switch($action) {
 echo json_encode($result);
 exit;
 ?>
+

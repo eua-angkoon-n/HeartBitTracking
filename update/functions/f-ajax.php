@@ -68,24 +68,28 @@ Class ReadSheets{
             $obj->fetchRows($tun);
 
             $order = '';
+            $face  = '';
             $date  = DATE('Y-m-d H:i:s');
             foreach ($s as $key => $value){
                 if(!IsNullOrEmptyString($value['0'])){
                     $order = $value['0'];
                 }
+                if(!IsNullOrEmptyString($value['1'])){
+                    $face  = $value['1'];
+                }
                 $v = [
                     'item_order'    => $order ,
-                    'facebook'      => !IsNullOrEmptyString($value['1']) ? $value['1'] : '' ,
-                    'item_name'     => !IsNullOrEmptyString($value['2']) ? $value['2'] : '' , 
-                    'item_option'   => !IsNullOrEmptyString($value['3']) ? $value['3'] : '' ,
-                    'item_amount'   => !IsNullOrEmptyString($value['4']) ? $value['4'] : '' ,
-                    'item_status'   => !IsNullOrEmptyString($value['5']) ? $value['5'] : '' ,
-                    'balance'       => !IsNullOrEmptyString($value['6']) ? $value['6'] : '' ,
-                    'deadline_date' => !IsNullOrEmptyString($value['7']) ? $value['7'] : '' ,
-                    'receive_date'  => !IsNullOrEmptyString($value['8']) ? $value['8'] : '' ,
-                    'delivery_date' => !IsNullOrEmptyString($value['9']) ? $value['9'] : '' ,
-                    'remark'        => !IsNullOrEmptyString($value['10']) ? $value['10'] : '' ,
-                    'receive_name'  => !IsNullOrEmptyString($value['11']) ? $value['11'] : '' ,
+                    'facebook'      => $face ,
+                    'img'           => !IsNullOrEmptyString($value['2']) ? $value['2'] : '' ,
+                    'item_name'     => !IsNullOrEmptyString($value['3']) ? $value['3'] : '' , 
+                    'item_option'   => !IsNullOrEmptyString($value['4']) ? $value['4'] : '' ,
+                    'item_amount'   => !IsNullOrEmptyString($value['5']) ? $value['5'] : '' ,
+                    'item_status'   => !IsNullOrEmptyString($value['6']) ? $value['6'] : '' ,
+                    'balance'       => !IsNullOrEmptyString($value['7']) ? $value['7'] : '' ,
+                    'deadline_date' => !IsNullOrEmptyString($value['8']) ? $value['8'] : '' ,
+                    'receive_date'  => !IsNullOrEmptyString($value['9']) ? $value['9'] : '' ,
+                    'delivery_date' => !IsNullOrEmptyString($value['10']) ? $value['10'] : '' ,
+                    'remark'        => !IsNullOrEmptyString($value['11']) ? $value['11'] : '' ,
                     'date_updated'  => $date
                 ];
 

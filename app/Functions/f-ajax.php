@@ -10,87 +10,53 @@ require_once __DIR__ . "/../../config/setting.php";
 require_once __DIR__ . "/../../tools/crud.tool.php";
 require_once __DIR__ . "/../../tools/function.tool.php";
 
-require __DIR__ . '/../../vendor/autoload.php';
+$action = $_REQUEST['action'];
 
+switch ($action) {
+    case 'modal':
+        $Call = new modalDetail($_POST['order'], $_POST['facebook']);
+        $Result = $Call->getData();
+        break;
+}
 
-$Call   = new ReadSheets();
-$Result = $Call->DoUpdate();
+echo $Result;
 
-echo '<pre>';
-print_r($Result);
-echo '</pre>';
-exit;
-
-
-Class ReadSheets{
-    public function __construct(){
-
+Class modalDetail{
+    private $order;
+    private $facebook;
+    private $balance = false;
+    private $deadline = false;
+    private $adminH = false;
+    private $trucking = false;
+    private $remark = false;
+    public function __construct($order, $facebook){
+        $this->order = $order;
+        $this->facebook = $facebook;
     }
 
-    public function DoUpdate(){
-        $data = $this->getDataFromSheet();
-        $r    = $this->DoInsertData($data);
-        return $r;
+    public function getData(){
+        return $this->Do();
     }
 
-    public function getDataFromSheet(){
-        // configure the Google Client
-        $client = new \Google_Client();
-        $client->setApplicationName('Google Sheets API');
-        $client->setScopes([\Google_Service_Sheets::SPREADSHEETS]);
-        $client->setAccessType('offline');
-        // credentials.json is the key file we downloaded while setting up our Google Sheets API
-        $path = __DIR__ . '/../../config/credentials.json';
-        $client->setAuthConfig($path);
-
-        // configure the Sheets Service
-        $service = new \Google_Service_Sheets($client);
-
-        // the spreadsheet id can be found in the url https://docs.google.com/spreadsheets/d/143xVs9lPopFSF4eJQWloDYAndMor/edit
-        $spreadsheetId = MySecret::$spreadsheetId;
-        $spreadsheet = $service->spreadsheets->get($spreadsheetId);
-        // var_dump($spreadsheet);
-
-        // we define here the expected range, columns from A to F and lines from 1 to 10
-        $range = MySecret::$spreadsheetRange;
-        $response = $service->spreadsheets_values->get($spreadsheetId, $range);
-        $values = $response->getValues();
-        return $values;
+    public function Do(){
+        $row = $this->getRowOfOrder();
+        $data = $this->createdDiv($row);
+        return $data;
     }
 
-    public function DoInsertData($s){
-
-        $tun = "TRUNCATE TABLE tb_lot;";
-
+    public function getRowOfOrder(){
+        $sql  = "SELECT * ";
+        $sql .= "FROM tb_lot ";
+        $sql .= "WHERE item_order = '$this->order' ";
+        $sql .= "AND facebook = '$this->facebook' ";
+        $sql .= "ORDER BY id_lot ASC ";
+        
         try {
             $con = connect_database();
             $obj = new CRUD($con);
-            $obj->fetchRows($tun);
 
-            $order = '';
-            $date  = DATE('Y-m-d H:i:s');
-            foreach ($s as $key => $value){
-                if(!IsNullOrEmptyString($value['0'])){
-                    $order = $value['0'];
-                }
-                $v = [
-                    'item_order'    => $order ,
-                    'facebook'      => !IsNullOrEmptyString($value['1']) ? $value['1'] : '' ,
-                    'item_name'     => !IsNullOrEmptyString($value['2']) ? $value['2'] : '' , 
-                    'item_option'   => !IsNullOrEmptyString($value['3']) ? $value['3'] : '' ,
-                    'item_amount'   => !IsNullOrEmptyString($value['4']) ? $value['4'] : '' ,
-                    'item_status'   => !IsNullOrEmptyString($value['5']) ? $value['5'] : '' ,
-                    'balance'       => !IsNullOrEmptyString($value['6']) ? $value['6'] : '' ,
-                    'deadline_date' => !IsNullOrEmptyString($value['7']) ? $value['7'] : '' ,
-                    'receive_date'  => !IsNullOrEmptyString($value['8']) ? $value['8'] : '' ,
-                    'delivery_date' => !IsNullOrEmptyString($value['9']) ? $value['9'] : '' ,
-                    'remark'        => !IsNullOrEmptyString($value['10']) ? $value['10'] : '' ,
-                    'receive_name'  => !IsNullOrEmptyString($value['11']) ? $value['11'] : '' ,
-                    'date_updated'  => $date
-                ];
-
-                $row = $obj->addRow($v, 'tb_lot');
-            }
+            $row = $obj->fetchRows($sql);
+            return $row;
             
         } catch (PDOException $e) {
             return "Database connection failed: " . $e->getMessage();
@@ -101,7 +67,139 @@ Class ReadSheets{
         } finally {
             $con = null;
         }
+    }
 
-        
+    public function createdDiv($row){
+        $r  = "<div class='time-label'>
+                <span class='bg-info'>รายการสินค้า</span>
+            </div>";
+        $r .= $this->getItem($row);
+        if($this->balance || $this->deadline || $this->adminH || $this->trucking || $this->remark){
+            $r.= $this->getDetailItem($row);
+        }
+        return $r;
+    }
+
+    public function getItem($row){
+        $r = "";
+        foreach ($row as $key => $value) {
+            $bg = Setting::$statusTrack[$value['item_status']];
+            $name = $value['item_name']." ".$value['item_option'];
+            $img = IsNullOrEmptyString($value['img']) ? "dist/img/HeartbitLogo.jpg" : $value['img'];
+            // $img = "dist/img/HeartbitLogo.jpg";
+            $status = $value['item_status'];
+            $amount = $value['item_amount'];
+            $r .="
+            <div>
+                <i class='fas fa-shopping-cart' style='background-color:$bg;color:white'></i>
+                <div class='timeline-item'>
+                    <h3 class='timeline-header'>
+                        <a id='item_name'>$name</a>
+                    $amount</h3>";
+
+            $r .= "<div class='timeline-body'>
+                        <img src='$img'
+                            alt='img' data-id='$img' data-toggle='modal' data-target='#modal-img'
+                            class='product-image-thumb modal-img'>
+                    </div>";
+            
+            $r .= "<div class='timeline-footer'>
+                        <a class='btn btn-sm'
+                            style='background-color:$bg;color:white'>$status</a>
+                    </div>
+                </div>
+            </div>";
+            if($value['balance'] != "-" && $value['balance'] != ""){
+                $this->balance = true;
+            }
+            if($value['deadline_date'] != "-" && $value['deadline_date'] != ""){
+                $this->deadline = true;
+            }
+            if($value['receive_date'] != "-" && $value['receive_date'] != ""){
+                $this->adminH = true;
+            }
+            if($value['delivery_date'] != "-" && $value['delivery_date'] != ""){
+                $this->trucking = true;
+            }
+            if($value['remark'] != "-" && $value['remark'] != ""){
+                $this->remark = true;
+            }
+        }
+        return $r;
+    }
+
+    public function getDetailItem($row){
+        $r = "<div class='time-label'>
+                <span class='bg-green'>รายละเอียด</span>
+            </div>";
+        $balance = "";
+        $deadline = "";
+        $adminH = "";
+        $trucking = "";
+        $remark = "";
+
+        foreach ($row as $key => $value) {
+            if($value['balance'] != "-" && $value['balance'] != ""){
+                $balance = $value['balance'];
+            }
+            if($value['deadline_date'] != "-" && $value['deadline_date'] != ""){
+                $deadline = $value['deadline_date'];
+            }
+            if($value['receive_date'] != "-" && $value['receive_date'] != ""){
+                $adminH = $value['receive_date'];
+            }
+            if($value['delivery_date'] != "-" && $value['delivery_date'] != ""){
+                $trucking = $value['delivery_date'];
+            }
+            if($value['remark'] != "-" && $value['remark'] != ""){
+                $remark = $value['remark'];
+            }
+        }
+
+        if($balance != ""){
+            $r .= "<div>
+                <i class='fa fa-money-bill-wave-alt bg-red'></i>
+                <div class='timeline-item'>
+                    <h3 class='timeline-header'>
+                        <a>ยอดค้าง</a> $balance </h3>";
+            if($deadline != ""){
+                $r .= "<div class='timeline-footer'>
+                        <b>เดดไลน์จ่ายยอดค้าง</b> $deadline </h3>
+                       </div>";
+            }
+            $r .= "</div>
+            </div>"; 
+        }
+        if($adminH != ""){
+            $r .= "<div>
+                    <i class='fa fa-home bg-info'></i>
+                    <div class='timeline-item'>
+                        <h3 class='timeline-header'>
+                            <a>เข้าบ้านแอดมิน</a> $adminH </h3>
+                    </div>
+                </div>";
+        }
+        if($trucking != ""){
+            $r .= "<div>
+                    <i class='fa fa-truck bg-success'></i>
+                    <div class='timeline-item'>
+                        <h3 class='timeline-header'>
+                            <a>จัดส่งสินค้า</a> $trucking </h3>
+                    </div>
+                </div>";
+        }
+        if($remark != ""){
+            $r .= "<div>
+                    <i class='fa fa-marker bg-secondary'></i>
+                    <div class='timeline-item'>
+                        <h3 class='timeline-header'>
+                            <a>หมายเหตุ</a></h3>
+                        <div class='timeline-body'>
+                        $remark
+                        </div>
+                    </div>
+                </div>";
+        }
+        return $r;
     }
 }

@@ -37,8 +37,8 @@
             "ordering": true,
             "info": true,
             "autoWidth": false,
-            "scrollX": false,
-            "responsive": true,
+            "scrollX": true,
+            "responsive": false,
         });
 
     });
